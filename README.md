@@ -30,21 +30,51 @@ así que no hace falta configurar CORS en desarrollo. Levanta primero el backend
 En `src/environments/environment.development.ts` pon `useMockBackend: true`. Se usa un backend
 simulado en el navegador con el mismo contrato. Usuario: **admin / admin123** (o regístrate).
 
-## Docker
+## Docker (puerto 8080)
 
 ```bash
-docker compose up --build -d     # http://localhost:4200
+docker compose up --build -d     # http://localhost:8080
 docker compose logs -f frontend
 docker compose down
 ```
 
-Imagen multi-stage: build de Angular con Node 22, servido con nginx. nginx reenvía `/api/*`
-a `BACKEND_URL` (por defecto `http://host.docker.internal:8000`, es decir, el backend corriendo en tu máquina).
-Si el backend corre en otro contenedor de la misma red de compose:
+Imagen multi-stage: build de Angular con Node 22 → nginx. El contenedor escucha en `$PORT`
+(8080 por defecto, como exige Cloud Run) y nginx reenvía `/api/*` a `BACKEND_URL`.
+
+| Variable | Default | Uso |
+|---|---|---|
+| `PORT` | `8080` | Puerto de escucha (Cloud Run la inyecta) |
+| `BACKEND_URL` | `http://host.docker.internal:8000` | URL base del backend, **sin** `/api` ni `/` final |
+
+Health check: `GET /healthz` → `200 ok`.
+
+## Despliegue en GCP (Cloud Run)
 
 ```bash
-BACKEND_URL=http://backend:8000 docker compose up --build -d
+gcloud config set project <PROJECT_ID>
+
+# Opción A: build + deploy en un paso (usa el Dockerfile)
+gcloud run deploy gapsi-frontend \
+  --source . \
+  --region us-central1 \
+  --port 8080 \
+  --allow-unauthenticated \
+  --set-env-vars BACKEND_URL=https://<tu-backend>.run.app
+
+# Opción B: imagen en Artifact Registry
+gcloud artifacts repositories create gapsi --repository-format=docker --location=us-central1
+gcloud builds submit --tag us-central1-docker.pkg.dev/<PROJECT_ID>/gapsi/frontend
+gcloud run deploy gapsi-frontend \
+  --image us-central1-docker.pkg.dev/<PROJECT_ID>/gapsi/frontend \
+  --region us-central1 --port 8080 --allow-unauthenticated \
+  --set-env-vars BACKEND_URL=https://<tu-backend>.run.app
 ```
+
+- El navegador solo habla con el frontend; nginx hace de proxy al backend, así que **no hace falta CORS**.
+- El proxy envía el `Host` del backend y SNI, requisito para que un backend en Cloud Run responda.
+- Si el backend de Cloud Run exige autenticación IAM, el proxy no envía token: despliégalo con
+  `--allow-unauthenticated` (la API ya protege sus rutas con JWT).
+- Para una VM o GKE: `docker run -p 8080:8080 -e BACKEND_URL=http://<ip-backend>:8000 <imagen>`.
 
 ## Contrato de API (colección Postman GAPSI)
 
