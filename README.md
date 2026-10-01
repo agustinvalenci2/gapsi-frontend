@@ -48,6 +48,10 @@ Imagen multi-stage: build de Angular con Node 22 → nginx. El contenedor escuch
 
 Health check: `GET /healthz` → `200 ok`.
 
+El backend se resuelve por DNS en cada petición (`resolver` tomado de `/etc/resolv.conf`), así que
+el contenedor **arranca aunque `BACKEND_URL` no esté definido o no resuelva**; en ese caso `/api` responde 502.
+Al arrancar se imprime en los logs: `[gapsi] PORT=… BACKEND_URL=… RESOLVER=…`.
+
 ## Despliegue en GCP (Cloud Run)
 
 ```bash

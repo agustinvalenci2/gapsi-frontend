@@ -5,12 +5,18 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # El backend se resuelve por DNS en cada petición: si no está disponible,
+    # /api responde 502 pero el contenedor arranca igual (requisito de Cloud Run).
+    resolver ${NGINX_RESOLVER} valid=30s ipv6=off;
+    resolver_timeout 5s;
+
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml;
 
     # Proxy al backend: el navegador llama a /api/v1/... en el mismo origen (sin CORS).
     location /api/ {
-        proxy_pass ${BACKEND_URL};
+        set $backend "${BACKEND_URL}";
+        proxy_pass $backend;
         proxy_http_version 1.1;
         # Host del upstream (necesario si el backend también está en Cloud Run / HTTPS).
         proxy_set_header Host $proxy_host;

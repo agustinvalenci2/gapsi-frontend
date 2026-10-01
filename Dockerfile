@@ -18,6 +18,8 @@ ENV PORT=8080
 
 # La imagen oficial procesa /etc/nginx/templates/*.template con envsubst al arrancar.
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY nginx/15-backend-env.envsh /docker-entrypoint.d/15-backend-env.envsh
+RUN chmod +x /docker-entrypoint.d/15-backend-env.envsh
 COPY --from=build /app/dist/issue-tracker/browser /usr/share/nginx/html
 
 EXPOSE 8080

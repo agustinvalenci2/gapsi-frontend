@@ -1,0 +1,17 @@
+#!/bin/sh
+# Se ejecuta (source) antes de que nginx procese las plantillas con envsubst.
+
+# Resolver DNS para resolver BACKEND_URL en tiempo de petición
+# (Cloud Run: 169.254.169.254, docker compose: 127.0.0.11).
+ns=$(awk '/^nameserver/ { print $2; exit }' /etc/resolv.conf 2>/dev/null)
+case "$ns" in
+  "") ns="8.8.8.8" ;;
+  *:*) ns="[$ns]" ;;
+esac
+export NGINX_RESOLVER="${NGINX_RESOLVER:-$ns}"
+
+# Sin "/" final: con proxy_pass por variable, una ruta en la URL reemplazaría el URI.
+BACKEND_URL="${BACKEND_URL%/}"
+export BACKEND_URL
+
+echo "[gapsi] PORT=${PORT} BACKEND_URL=${BACKEND_URL} RESOLVER=${NGINX_RESOLVER}"
