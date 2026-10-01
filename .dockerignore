@@ -1,0 +1,8 @@
+node_modules
+dist
+.angular
+.vscode
+.git
+_to_delete
+*.tar.gz
+npm-debug.log

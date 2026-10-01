@@ -1,0 +1,92 @@
+<div class="page-header">
+  <h1>Incidencias</h1>
+  <a class="btn btn--primary" routerLink="/issues/new">+ Nueva incidencia</a>
+</div>
+
+<app-issue-summary [summary]="summary()" />
+
+<app-issue-filters (filtersChange)="onFiltersChange($event)" />
+
+@if (errorMessage(); as msg) {
+  <div class="alert alert--error" role="alert">{{ msg }}</div>
+}
+
+<div class="card">
+  @if (loading()) {
+    <p class="empty">Cargando incidencias…</p>
+  } @else {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Creada</th>
+          <th><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (issue of issues(); track issue.id) {
+          <tr [class.is-updating]="updating().has(issue.id)">
+            <td data-label="Título">
+              <strong>{{ issue.title }}</strong>
+              @if (issue.description) {
+                <p class="muted table__desc">{{ issue.description }}</p>
+              }
+            </td>
+            <td data-label="Prioridad">
+              <select
+                #prioritySel
+                class="pill"
+                [attr.data-priority]="issue.priority"
+                [value]="issue.priority"
+                [disabled]="updating().has(issue.id)"
+                [attr.aria-label]="'Prioridad de ' + issue.title"
+                (change)="onPriorityChange(issue, prioritySel.value)"
+              >
+                @for (p of priorities; track p) {
+                  <option [value]="p" [selected]="p === issue.priority">{{ p | priorityLabel }}</option>
+                }
+              </select>
+            </td>
+            <td data-label="Estado">
+              <select
+                #statusSel
+                class="pill"
+                [attr.data-status]="issue.status"
+                [value]="issue.status"
+                [disabled]="updating().has(issue.id)"
+                [attr.aria-label]="'Estado de ' + issue.title"
+                (change)="onStatusChange(issue, statusSel.value)"
+              >
+                @for (s of statuses; track s) {
+                  <option [value]="s" [selected]="s === issue.status">{{ s | statusLabel }}</option>
+                }
+              </select>
+            </td>
+            <td data-label="Creada" class="muted">
+              {{ issue.createdAt ? (issue.createdAt | date: 'dd/MM/yyyy HH:mm') : '—' }}
+            </td>
+            <td class="table__actions">
+              <button
+                type="button"
+                class="btn btn--sm"
+                [class.btn--danger]="confirmingDelete() === issue.id"
+                [class.btn--ghost]="confirmingDelete() !== issue.id"
+                [disabled]="updating().has(issue.id)"
+                (click)="delete(issue)"
+                (blur)="confirmingDelete.set(null)"
+              >
+                {{ confirmingDelete() === issue.id ? '¿Eliminar?' : 'Eliminar' }}
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="empty">No hay incidencias que coincidan con los filtros.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

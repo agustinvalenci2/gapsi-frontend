@@ -1,0 +1,51 @@
+<div class="page-header">
+  <h1>Nueva incidencia</h1>
+  <a class="btn btn--ghost" routerLink="/issues">← Volver</a>
+</div>
+
+<form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <label class="field">
+    <span>Título</span>
+    <input type="text" formControlName="title" [maxlength]="titleMax" />
+    @let title = form.controls.title;
+    @if (title.touched && title.invalid) {
+      <small class="field__error">
+        @if (title.hasError('required')) { El título es obligatorio }
+        @else if (title.hasError('minlength')) { Mínimo 3 caracteres }
+        @else if (title.hasError('maxlength')) { Máximo {{ titleMax }} caracteres }
+      </small>
+    }
+  </label>
+
+  <label class="field">
+    <span>Descripción</span>
+    <textarea formControlName="description" rows="5" [maxlength]="descriptionMax"></textarea>
+    <small class="muted">{{ form.controls.description.value.length }} / {{ descriptionMax }}</small>
+    @if (form.controls.description.touched && form.controls.description.hasError('required')) {
+      <small class="field__error">La descripción es obligatoria</small>
+    }
+  </label>
+
+  <fieldset class="field">
+    <legend>Prioridad</legend>
+    <div class="radio-group">
+      @for (p of priorities; track p) {
+        <label class="radio" [attr.data-priority]="p">
+          <input type="radio" formControlName="priority" [value]="p" />
+          {{ p | priorityLabel }}
+        </label>
+      }
+    </div>
+  </fieldset>
+
+  @if (errorMessage(); as msg) {
+    <div class="alert alert--error" role="alert">{{ msg }}</div>
+  }
+
+  <div class="form__actions">
+    <a class="btn btn--ghost" routerLink="/issues">Cancelar</a>
+    <button type="submit" class="btn btn--primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Crear incidencia' }}
+    </button>
+  </div>
+</form>

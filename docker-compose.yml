@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build: .
+    image: gapsi-issue-tracker-frontend
+    container_name: gapsi-frontend
+    ports:
+      - "4200:80"
+    environment:
+      # Backend corriendo en tu máquina (puerto 8000).
+      # Si el backend está en otro contenedor de la misma red, usa p. ej. http://backend:8000
+      BACKEND_URL: ${BACKEND_URL:-http://host.docker.internal:8000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
